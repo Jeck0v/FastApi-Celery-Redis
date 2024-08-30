@@ -1,0 +1,40 @@
+
+services:
+  app:
+    build: .
+    container_name: fastapi_app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=app/auth/fast-todo-a0ceb-firebase-adminsdk-9fezn-0c82867738.json
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - backend
+    depends_on:
+      - redis
+      - celery
+
+  redis:
+    image: "redis:alpine"
+    container_name: redis_contain
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  celery:
+    build: .
+    container_name: celery_work
+    command: celery -A app.worker worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
